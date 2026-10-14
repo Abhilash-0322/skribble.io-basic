@@ -3,9 +3,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
-import { Server } from "socket.io";
-import { RoomManager } from "./RoomManager.js";
-import { MessageHandler } from "./MessageHandler.js";
+import { setupSocketIO } from "./socketSetup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
@@ -14,8 +12,6 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const app = express();
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json());
-
-const roomManager = new RoomManager();
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
@@ -31,12 +27,7 @@ app.get("*", (req, res, next) => {
 });
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: { origin: CLIENT_ORIGIN, methods: ["GET", "POST"] },
-});
-
-const handler = new MessageHandler(io, roomManager);
-io.on("connection", (socket) => handler.register(socket));
+setupSocketIO(httpServer, { path: "/socket.io", corsOrigin: CLIENT_ORIGIN });
 
 httpServer.on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {

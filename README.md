@@ -4,9 +4,11 @@ Multiplayer drawing and guessing game built with **React + Vite**, **Node.js + E
 
 ## Live URL
 
-Deploy with [Render](https://render.com) using the included `render.yaml`, then set your URL here:
+**Vercel (recommended, single deploy):** import the repo on [Vercel](https://vercel.com), use default settings (`vercel.json` is included), enable **Fluid Compute** (on by default for new projects). Then put your URL here:
 
-**https://your-skribble-clone.onrender.com** _(replace after deployment)_
+**https://your-app.vercel.app**
+
+**Render (alternative):** use `render.yaml` for a traditional Node server + WebSockets.
 
 ## Local setup
 
@@ -77,6 +79,17 @@ See assignment spec — implemented: `create_room`, `join_room`, `start_game`, `
 
 ## Deployment notes
 
-- **Render / Railway**: single Node service with WebSockets works out of the box.
-- **Vercel / Netlify**: host static frontend only; point `VITE_SOCKET_URL` at a separate Socket.IO backend (Render/Railway).
-- Set `CLIENT_ORIGIN` to your public frontend URL for CORS.
+### Vercel (one project)
+
+1. Push to GitHub and **Import** on Vercel.
+2. Build command / output directory come from `vercel.json` (`build:vercel` → `client/dist`).
+3. Game WebSockets run in `api/socket-io.ts` (Vercel [WebSocket functions](https://vercel.com/docs/functions/websockets)); the client uses path `/api/socket-io/socket.io` and `transports: ['websocket']` in production.
+4. Rooms are **in-memory per function instance** — fine for demos; use Redis for production scale.
+
+### Render / Railway
+
+- `npm run build && npm start` — Express serves the built client and Socket.IO on one port (`render.yaml` included).
+
+### Split frontend + backend
+
+- Set `VITE_SOCKET_URL` to your API host if the client is not same-origin.
