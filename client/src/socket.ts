@@ -1,7 +1,5 @@
 import { io, Socket } from "socket.io-client";
 
-const isDev = import.meta.env.DEV;
-
 /**
  * Production (Vercel Services): same domain; rewrites send /socket.io → server service.
  * Dev: Vite proxy to local Express (see vite.config.ts).
