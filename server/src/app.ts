@@ -5,7 +5,8 @@ import { setupSocketIO } from "./socketSetup.js";
 
 function clientOrigin(): string | boolean {
   if (process.env.CLIENT_ORIGIN) return process.env.CLIENT_ORIGIN;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  // Preview + production Vercel hosts (avoid CORS blocking Socket.IO)
+  if (process.env.VERCEL === "1") return true;
   return "http://localhost:5173";
 }
 

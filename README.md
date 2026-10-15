@@ -85,8 +85,9 @@ See assignment spec — implemented: `create_room`, `join_room`, `start_game`, `
 2. **Services:** `client` (Vite → `client/dist`), `server` (Express + Socket.IO → `server/dist/index.js`).
 3. **Public routes:** everything → `client`; `/api/*` and `/socket.io/*` → `server` (see rewrites in `vercel.json`).
 4. Optional env on **server** service: `CLIENT_ORIGIN` = `https://your-app.vercel.app` (CORS; auto-set from `VERCEL_URL` if omitted).
-5. Open the **project** URL from Vercel (e.g. `your-project.vercel.app`), not a `client-xxxx.vercel.app` service hostname unless that host is wired in your dashboard.
-6. Test locally with all services: `vercel dev` (from repo root).
+5. Use the **main Production URL** from Vercel → **Domains** (one `web` service). Old `client-xxxx.vercel.app` links only served the frontend and could not reach Socket.IO.
+6. **Deployment Protection:** if enabled, turn it off for demos (Settings → Deployment Protection) or `/socket.io` and `/api/*` may be blocked for browsers.
+7. Test locally: `vercel dev` from repo root, or `npm run dev` for classic local dev.
 6. Rooms are **in-memory per server instance** — fine for demos; use Redis for production scale.
 
 ### Render / Railway

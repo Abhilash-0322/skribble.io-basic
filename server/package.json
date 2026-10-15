@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc && node -e \"const fs=require('fs');fs.mkdirSync('dist/data',{recursive:true});fs.copyFileSync('src/data/words.json','dist/data/words.json');\"",
+    "build:vercel": "node scripts/build-vercel.cjs",
     "start": "node dist/index.js"
   },
   "dependencies": {
