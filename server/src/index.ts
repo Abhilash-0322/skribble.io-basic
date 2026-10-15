@@ -3,13 +3,10 @@ import express from "express";
 import { createApp } from "./app.js";
 const PORT = Number(process.env.PORT) || 3001;
 const isVercelService = process.env.VERCEL === "1";
-/** Avoid binding a port when loaded as a library (e.g. vercel-entry.cjs). */
-const isDirectRun =
-  typeof require !== "undefined" && require.main === module;
 
 const { app, httpServer } = createApp();
 
-if (!isVercelService && isDirectRun) {
+if (!isVercelService) {
   const clientDist = path.join(__dirname, "../../client/dist");
   app.use(express.static(clientDist));
   app.get("*", (req, res, next) => {
@@ -29,8 +26,8 @@ if (!isVercelService && isDirectRun) {
     throw err;
   });
 
-  httpServer.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server listening on 0.0.0.0:${PORT}`);
   });
 }
 

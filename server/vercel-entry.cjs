@@ -1,6 +1,9 @@
 /**
- * Vercel server service entry (CommonJS). Built output lives in dist/.
- * Do not point entrypoint at src/*.ts — the platform bundle breaks ESM imports.
+ * Vercel invokes the Express app per request; Socket.IO is wired via io.engine.handleRequest in createApp.
  */
-const mod = require("./dist/index.js");
-module.exports = mod.default ?? mod;
+const { createApp } = require("./dist/app.js");
+
+const { app } = createApp(require("path").join(__dirname, "dist"));
+
+module.exports = app;
+module.exports.default = app;

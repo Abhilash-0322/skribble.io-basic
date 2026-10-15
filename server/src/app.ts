@@ -5,8 +5,10 @@ import { createServer, type Server as HttpServer } from "http";
 import { setupSocketIO } from "./socketSetup.js";
 import { attachPublicAssets } from "./publicAssets.js";
 
-function clientOrigin(): string | boolean {
-  if (process.env.CLIENT_ORIGIN) return process.env.CLIENT_ORIGIN;
+function clientOrigin(): string | boolean | string[] {
+  if (process.env.CLIENT_ORIGIN) {
+    return process.env.CLIENT_ORIGIN.split(",").map((s) => s.trim());
+  }
   if (process.env.VERCEL === "1") return true;
   return "http://localhost:5173";
 }
@@ -17,7 +19,13 @@ export function createApp(assetDir = __dirname): { app: Express; httpServer: Htt
   app.use(express.json());
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, mode: process.env.VERCEL === "1" ? "vercel-service" : "monolith" });
+    const mode =
+      process.env.VERCEL === "1"
+        ? "vercel-service"
+        : process.env.WEBSITE_SITE_NAME
+          ? "azure-app-service"
+          : "monolith";
+    res.json({ ok: true, mode });
   });
 
   if (process.env.VERCEL === "1") {
@@ -25,7 +33,15 @@ export function createApp(assetDir = __dirname): { app: Express; httpServer: Htt
   }
 
   const httpServer = createServer(app);
-  setupSocketIO(httpServer, { path: "/socket.io", corsOrigin: clientOrigin() });
+  const io = setupSocketIO(httpServer, { path: "/socket.io", corsOrigin: clientOrigin() });
+
+  if (process.env.VERCEL === "1") {
+    app.use((req, res, next) => {
+      if (!req.url?.startsWith("/socket.io")) return next();
+      io.engine.handleRequest(req, res);
+    });
+  }
+
   return { app, httpServer };
 }
 

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: skribble-clone
+    name: skribble-api
     runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm run start
@@ -8,4 +8,4 @@ services:
       - key: NODE_VERSION
         value: 22
       - key: CLIENT_ORIGIN
-        value: https://skribble-clone.onrender.com
+        value: https://skribbleio.vercel.app

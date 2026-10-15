@@ -4,11 +4,16 @@ Multiplayer drawing and guessing game built with **React + Vite**, **Node.js + E
 
 ## Live URL
 
-**Vercel (recommended):** import the repo on [Vercel](https://vercel.com) — the root `vercel.json` defines **two services** (`client` + `server`) and routes `/api/*` and `/socket.io/*` to the backend. Enable **Fluid Compute** for WebSockets. Then put your URL here:
+**Recommended:** client on **Vercel**, API on **Azure App Service** (stable Socket.IO) — **[DEPLOY-AZURE.md](./DEPLOY-AZURE.md)**.
 
-**https://your-app.vercel.app**
+| Piece | Host | Env |
+|-------|------|-----|
+| **Client** | Vercel (`client/`) | `VITE_SOCKET_URL` → Azure API URL |
+| **API** | Azure Linux Web App (`server/`) | `CLIENT_ORIGIN` → `https://skribbleio.vercel.app` |
 
-**Render (alternative):** use `render.yaml` for a traditional Node server + WebSockets.
+Example: UI `https://skribbleio.vercel.app` · API `https://<your-app>.azurewebsites.net`
+
+Vercel-only split deploy is documented in **[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md)** but is unreliable for realtime (400/`sid` errors).
 
 ## Local setup
 
@@ -79,21 +84,6 @@ See assignment spec — implemented: `create_room`, `join_room`, `start_game`, `
 
 ## Deployment notes
 
-### Vercel (Services: client + server)
+See **[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md)** for step-by-step two-project Vercel setup.
 
-1. Push to GitHub and **Import** on Vercel (root directory = repo root; `vercel.json` is auto-detected).
-2. **Services:** `client` (Vite → `client/dist`), `server` (Express + Socket.IO → `server/dist/index.js`).
-3. **Public routes:** everything → `client`; `/api/*` and `/socket.io/*` → `server` (see rewrites in `vercel.json`).
-4. Optional env on **server** service: `CLIENT_ORIGIN` = `https://your-app.vercel.app` (CORS; auto-set from `VERCEL_URL` if omitted).
-5. Use the **main Production URL** from Vercel → **Domains** (one `web` service). Old `client-xxxx.vercel.app` links only served the frontend and could not reach Socket.IO.
-6. **Deployment Protection:** if enabled, turn it off for demos (Settings → Deployment Protection) or `/socket.io` and `/api/*` may be blocked for browsers.
-7. Test locally: `vercel dev` from repo root, or `npm run dev` for classic local dev.
-6. Rooms are **in-memory per server instance** — fine for demos; use Redis for production scale.
-
-### Render / Railway
-
-- `npm run build && npm start` — Express serves the built client and Socket.IO on one port (`render.yaml` included).
-
-### Split frontend + backend
-
-- Set `VITE_SOCKET_URL` to your API host if the client is not same-origin.
+**Monolith (optional):** `npm run build && npm start` on Render/Railway (`render.yaml`) — one URL, full WebSockets, no `VITE_SOCKET_URL`.

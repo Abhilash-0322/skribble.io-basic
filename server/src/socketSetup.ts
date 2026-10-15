@@ -8,7 +8,7 @@ export const roomManager = new RoomManager();
 
 export function setupSocketIO(
   httpServer: HttpServer,
-  options: { path?: string; corsOrigin?: string | boolean } = {}
+  options: { path?: string; corsOrigin?: string | boolean | string[] } = {}
 ): Server {
   const io = new Server(httpServer, {
     path: options.path ?? "/socket.io",

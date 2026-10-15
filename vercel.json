@@ -1,31 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "web": {
-      "root": "server",
-      "installCommand": "cd .. && npm ci",
-      "buildCommand": "npm run build:vercel",
-      "entrypoint": "vercel-entry.cjs"
-    }
-  },
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build --workspace=client",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
   "rewrites": [
     {
-      "source": "/socket.io/:path*",
-      "destination": {
-        "service": "web"
-      }
-    },
-    {
-      "source": "/api/:path*",
-      "destination": {
-        "service": "web"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "web"
-      }
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
     }
   ]
 }
