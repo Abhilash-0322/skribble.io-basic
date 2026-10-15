@@ -4,7 +4,7 @@ Multiplayer drawing and guessing game built with **React + Vite**, **Node.js + E
 
 ## Live URL
 
-**Vercel (recommended, single deploy):** import the repo on [Vercel](https://vercel.com), use default settings (`vercel.json` is included), enable **Fluid Compute** (on by default for new projects). Then put your URL here:
+**Vercel (recommended):** import the repo on [Vercel](https://vercel.com) — the root `vercel.json` defines **two services** (`client` + `server`) and routes `/api/*` and `/socket.io/*` to the backend. Enable **Fluid Compute** for WebSockets. Then put your URL here:
 
 **https://your-app.vercel.app**
 
@@ -79,12 +79,14 @@ See assignment spec — implemented: `create_room`, `join_room`, `start_game`, `
 
 ## Deployment notes
 
-### Vercel (one project)
+### Vercel (Services: client + server)
 
-1. Push to GitHub and **Import** on Vercel.
-2. Build command / output directory come from `vercel.json` (`build:vercel` → `client/dist`).
-3. Game WebSockets run in `api/socket-io.ts` (Vercel [WebSocket functions](https://vercel.com/docs/functions/websockets)); the client uses path `/api/socket-io/socket.io` and `transports: ['websocket']` in production.
-4. Rooms are **in-memory per function instance** — fine for demos; use Redis for production scale.
+1. Push to GitHub and **Import** on Vercel (root directory = repo root; `vercel.json` is auto-detected).
+2. **Services:** `client` (Vite → `client/dist`), `server` (Express + Socket.IO → `server/dist/index.js`).
+3. **Public routes:** everything → `client`; `/api/*` and `/socket.io/*` → `server` (see rewrites in `vercel.json`).
+4. Optional env on **server** service: `CLIENT_ORIGIN` = `https://your-app.vercel.app` (CORS; auto-set from `VERCEL_URL` if omitted).
+5. Test locally with all services: `vercel dev` (from repo root).
+6. Rooms are **in-memory per server instance** — fine for demos; use Redis for production scale.
 
 ### Render / Railway
 

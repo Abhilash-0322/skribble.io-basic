@@ -1,17 +1,37 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build:vercel",
-  "outputDirectory": "client/dist",
+  "services": {
+    "client": {
+      "root": "client",
+      "framework": "vite",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist"
+    },
+    "server": {
+      "root": "server",
+      "framework": "express",
+      "buildCommand": "npm run build",
+      "entrypoint": "dist/index.js"
+    }
+  },
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "source": "/socket.io/:path*",
+      "destination": {
+        "service": "server"
+      }
+    },
+    {
+      "source": "/api/:path*",
+      "destination": {
+        "service": "server"
+      }
+    },
+    {
+      "source": "/:path*",
+      "destination": {
+        "service": "client"
+      }
     }
-  ],
-  "functions": {
-    "api/socket-io.ts": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }

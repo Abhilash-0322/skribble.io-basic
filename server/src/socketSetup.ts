@@ -16,7 +16,7 @@ export function setupSocketIO(
       origin: options.corsOrigin ?? true,
       methods: ["GET", "POST"],
     },
-    transports: options.path?.includes("api/") ? ["websocket"] : ["websocket", "polling"],
+    transports: ["websocket", "polling"],
   });
   const handler = new MessageHandler(io, roomManager);
   io.on("connection", (socket) => handler.register(socket));

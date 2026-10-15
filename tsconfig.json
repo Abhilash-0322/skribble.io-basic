@@ -8,5 +8,5 @@
     "esModuleInterop": true,
     "noEmit": true
   },
-  "include": ["api/**/*.ts", "server/src/**/*.ts"]
+  "include": ["server/src/**/*.ts"]
 }

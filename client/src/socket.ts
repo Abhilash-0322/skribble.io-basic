@@ -2,18 +2,17 @@ import { io, Socket } from "socket.io-client";
 
 const isDev = import.meta.env.DEV;
 
-/** Same-origin on Vercel; Vite proxy in dev (see vite.config.ts). */
+/**
+ * Production (Vercel Services): same domain; rewrites send /socket.io → server service.
+ * Dev: Vite proxy to local Express (see vite.config.ts).
+ */
 const URL = import.meta.env.VITE_SOCKET_URL || "";
-
-const socketPath = isDev
-  ? "/socket.io"
-  : import.meta.env.VITE_SOCKET_PATH || "/api/socket-io/socket.io";
 
 export function createSocket(): Socket {
   return io(URL, {
     autoConnect: false,
-    path: socketPath,
-    transports: isDev ? ["websocket", "polling"] : ["websocket"],
+    path: "/socket.io",
+    transports: isDev ? ["websocket", "polling"] : ["websocket", "polling"],
   });
 }
 
