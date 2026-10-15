@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { GamePhase, RoomSettings, Stroke } from "./types.js";
 import type { Player } from "./Player.js";
-import words from "./data/words.json" with { type: "json" };
+import words from "./data/words.json";
 
 export class Game {
   phase: GamePhase = "lobby";

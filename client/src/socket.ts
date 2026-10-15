@@ -12,7 +12,7 @@ export function createSocket(): Socket {
   return io(URL, {
     autoConnect: false,
     path: "/socket.io",
-    transports: isDev ? ["websocket", "polling"] : ["websocket", "polling"],
+    transports: ["websocket", "polling"],
   });
 }
 

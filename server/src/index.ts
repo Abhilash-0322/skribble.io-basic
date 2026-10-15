@@ -1,15 +1,15 @@
 import path from "path";
-import { fileURLToPath } from "url";
 import express from "express";
 import { createApp } from "./app.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
 const isVercelService = process.env.VERCEL === "1";
+/** Avoid binding a port when loaded as a library (e.g. vercel-entry.cjs). */
+const isDirectRun =
+  typeof require !== "undefined" && require.main === module;
 
 const { app, httpServer } = createApp();
 
-if (!isVercelService) {
+if (!isVercelService && isDirectRun) {
   const clientDist = path.join(__dirname, "../../client/dist");
   app.use(express.static(clientDist));
   app.get("*", (req, res, next) => {

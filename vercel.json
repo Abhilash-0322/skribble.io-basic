@@ -12,7 +12,7 @@
       "root": "server",
       "installCommand": "cd .. && npm ci",
       "buildCommand": "npm run build",
-      "entrypoint": "src/index.ts"
+      "entrypoint": "vercel-entry.cjs"
     }
   },
   "rewrites": [
