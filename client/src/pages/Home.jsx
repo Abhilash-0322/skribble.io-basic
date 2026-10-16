@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGame, emitAck } from "../GameContext";
-import type { RoomSettings } from "../types";
+import { useGame, emitAck } from "../GameContext.jsx";
 
-const defaultSettings: RoomSettings = {
+const defaultSettings = {
   maxPlayers: 8,
   rounds: 3,
   drawTime: 80,
@@ -19,10 +18,8 @@ export function Home() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const [settings, setSettings] = useState<RoomSettings>(defaultSettings);
-  const [publicRooms, setPublicRooms] = useState<
-    { id: string; code: string; players: number; maxPlayers: number }[]
-  >([]);
+  const [settings, setSettings] = useState(defaultSettings);
+  const [publicRooms, setPublicRooms] = useState([]);
 
   useEffect(() => {
     connect();
@@ -49,7 +46,7 @@ export function Home() {
       setError("Enter your name");
       return;
     }
-    const res = await emitAck<{ roomId: string; code: string; playerId: string }>(socket, "create_room", {
+    const res = await emitAck(socket, "create_room", {
       hostName: name.trim(),
       settings,
     });
@@ -67,7 +64,7 @@ export function Home() {
     navigate("/lobby");
   };
 
-  const joinByCode = async (roomCode?: string) => {
+  const joinByCode = async (roomCode) => {
     setError("");
     if (!connected) {
       setError("Still connecting to server… wait a moment or restart npm run dev.");
@@ -78,7 +75,7 @@ export function Home() {
       setError("Enter name and room code");
       return;
     }
-    const res = await emitAck<{ roomId: string; code: string; playerId: string }>(socket, "join_room", {
+    const res = await emitAck(socket, "join_room", {
       code: c,
       playerName: name.trim(),
     });
@@ -97,9 +94,7 @@ export function Home() {
   };
 
   const refreshPublic = async () => {
-    const res = await emitAck<
-      { id: string; code: string; players: number; maxPlayers: number }[]
-    >(socket, "list_public_rooms", {});
+    const res = await emitAck(socket, "list_public_rooms", {});
     if (res.ok && res.data) setPublicRooms(res.data);
   };
 

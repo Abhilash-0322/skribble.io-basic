@@ -1,28 +1,22 @@
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
-/**
- * Local: empty URL + Vite proxy to backend.
- * Two Vercel projects: set VITE_SOCKET_URL to the server deployment URL.
- */
 const API_URL = import.meta.env.VITE_SOCKET_URL || "";
 
-/** Serverless Vercel API hosts — avoid for Socket.IO; use Azure/Render instead. */
-function isVercelApiUrl(url: string): boolean {
+function isVercelApiUrl(url) {
   return /vercel\.app/i.test(url);
 }
 
-function isPersistentApiUrl(url: string): boolean {
+function isPersistentApiUrl(url) {
   return /\.azurewebsites\.net$/i.test(url) || /onrender\.com$/i.test(url);
 }
 
-function socketTransports(): ("websocket" | "polling")[] {
+function socketTransports() {
   if (!API_URL) return ["websocket", "polling"];
-  // Vercel: start with polling, then upgrade so later polls are not routed to another instance.
   if (isVercelApiUrl(API_URL)) return ["polling", "websocket"];
   return ["websocket", "polling"];
 }
 
-export function createSocket(): Socket {
+export function createSocket() {
   const vercelRemote = Boolean(API_URL) && isVercelApiUrl(API_URL);
   const persistent = Boolean(API_URL) && isPersistentApiUrl(API_URL);
   return io(API_URL, {
@@ -36,14 +30,7 @@ export function createSocket(): Socket {
   });
 }
 
-export type SocketAck<T> = (response: { ok: boolean; error?: string; data?: T }) => void;
-
-export function emitAck<T>(
-  socket: Socket,
-  event: string,
-  payload: unknown,
-  timeoutMs = 8000
-): Promise<{ ok: boolean; error?: string; data?: T }> {
+export function emitAck(socket, event, payload, timeoutMs = 8000) {
   return new Promise((resolve) => {
     if (!socket.connected) {
       resolve({
@@ -55,14 +42,14 @@ export function emitAck<T>(
     const timer = setTimeout(() => {
       resolve({ ok: false, error: "Server did not respond. Is the backend deployment running?" });
     }, timeoutMs);
-    socket.emit(event, payload, (res: { ok: boolean; error?: string; data?: T }) => {
+    socket.emit(event, payload, (res) => {
       clearTimeout(timer);
       resolve(res ?? { ok: false, error: "No response from server" });
     });
   });
 }
 
-function remoteHint(): string {
+function remoteHint() {
   if (import.meta.env.PROD && !API_URL) {
     return "Set VITE_SOCKET_URL to your API host (e.g. Azure App Service), then redeploy the client.";
   }

@@ -1,39 +1,38 @@
-import { randomUUID } from "crypto";
-import type { GamePhase, RoomSettings, Stroke } from "./types.js";
-import type { Player } from "./Player.js";
-import words from "./data/words.json";
+const { randomUUID } = require("crypto");
+const words = require("./data/words.json");
 
-export class Game {
-  phase: GamePhase = "lobby";
-  currentRound = 0;
-  drawerIndex = 0;
-  currentWord: string | null = null;
-  wordOptions: string[] = [];
-  strokes: Stroke[] = [];
-  roundTimer: ReturnType<typeof setInterval> | null = null;
-  hintTimer: ReturnType<typeof setInterval> | null = null;
-  timeLeft = 0;
-  revealedHintCount = 0;
-  roundEnded = false;
+class Game {
+  constructor(settings) {
+    this.settings = settings;
+    this.phase = "lobby";
+    this.currentRound = 0;
+    this.drawerIndex = 0;
+    this.currentWord = null;
+    this.wordOptions = [];
+    this.strokes = [];
+    this.roundTimer = null;
+    this.hintTimer = null;
+    this.timeLeft = 0;
+    this.revealedHintCount = 0;
+    this.roundEnded = false;
+  }
 
-  constructor(private settings: RoomSettings) {}
-
-  getDrawer(players: Player[]): Player | null {
+  getDrawer(players) {
     if (players.length === 0) return null;
     return players[this.drawerIndex % players.length];
   }
 
-  resetPlayersForRound(players: Player[]): void {
+  resetPlayersForRound(players) {
     for (const p of players) p.resetRoundState();
   }
 
-  start(players: Player[]): void {
+  start(players) {
     this.currentRound = 1;
     this.drawerIndex = 0;
     this.beginWordSelect(players);
   }
 
-  beginWordSelect(players: Player[]): void {
+  beginWordSelect(players) {
     this.clearTimers();
     this.phase = "word_select";
     this.currentWord = null;
@@ -44,12 +43,12 @@ export class Game {
     this.resetPlayersForRound(players);
   }
 
-  private pickWords(count: number): string[] {
+  pickWords(count) {
     const shuffled = [...words].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 
-  chooseWord(word: string): boolean {
+  chooseWord(word) {
     if (!this.wordOptions.includes(word)) return false;
     this.currentWord = word;
     this.phase = "drawing";
@@ -57,31 +56,31 @@ export class Game {
     return true;
   }
 
-  addStroke(stroke: Omit<Stroke, "id">): Stroke {
-    const full: Stroke = { ...stroke, id: randomUUID() };
+  addStroke(stroke) {
+    const full = { ...stroke, id: randomUUID() };
     this.strokes.push(full);
     return full;
   }
 
-  undoLastStroke(): Stroke | null {
+  undoLastStroke() {
     const removed = this.strokes.pop();
     return removed ?? null;
   }
 
-  clearCanvas(): void {
+  clearCanvas() {
     this.strokes = [];
   }
 
-  normalizeGuess(text: string): string {
+  normalizeGuess(text) {
     return text.trim().toLowerCase().replace(/\s+/g, " ");
   }
 
-  checkGuess(text: string): boolean {
+  checkGuess(text) {
     if (!this.currentWord) return false;
     return this.normalizeGuess(text) === this.normalizeGuess(this.currentWord);
   }
 
-  getHintDisplay(): string {
+  getHintDisplay() {
     if (!this.currentWord) return "";
     if (this.settings.hints <= 0) {
       return this.currentWord
@@ -90,7 +89,7 @@ export class Game {
         .join(" ");
     }
     const chars = this.currentWord.split("");
-    const letterIndices: number[] = [];
+    const letterIndices = [];
     chars.forEach((c, i) => {
       if (c !== " ") letterIndices.push(i);
     });
@@ -103,15 +102,12 @@ export class Game {
       .join(" ");
   }
 
-  scheduleHints(onTick: () => void): void {
+  scheduleHints(onTick) {
     if (this.settings.hints <= 0 || !this.currentWord) return;
-    const interval = Math.max(
-      10,
-      Math.floor(this.settings.drawTime / (this.settings.hints + 1))
-    );
+    const interval = Math.max(10, Math.floor(this.settings.drawTime / (this.settings.hints + 1)));
     this.hintTimer = setInterval(() => {
       if (this.phase !== "drawing" || this.roundEnded) return;
-      const maxLetters = this.currentWord!.replace(/\s/g, "").length;
+      const maxLetters = this.currentWord.replace(/\s/g, "").length;
       if (this.revealedHintCount < maxLetters) {
         this.revealedHintCount++;
         onTick();
@@ -119,7 +115,7 @@ export class Game {
     }, interval * 1000);
   }
 
-  startRoundTimer(onTick: (timeLeft: number) => void, onEnd: () => void): void {
+  startRoundTimer(onTick, onEnd) {
     this.clearRoundTimer();
     onTick(this.timeLeft);
     this.roundTimer = setInterval(() => {
@@ -132,32 +128,30 @@ export class Game {
     }, 1000);
   }
 
-  clearRoundTimer(): void {
+  clearRoundTimer() {
     if (this.roundTimer) {
       clearInterval(this.roundTimer);
       this.roundTimer = null;
     }
   }
 
-  clearHintTimer(): void {
+  clearHintTimer() {
     if (this.hintTimer) {
       clearInterval(this.hintTimer);
       this.hintTimer = null;
     }
   }
 
-  clearTimers(): void {
+  clearTimers() {
     this.clearRoundTimer();
     this.clearHintTimer();
   }
 
-  /** Total turns = rounds * player count */
-  advanceAfterRound(players: Player[]): { gameOver: boolean } {
+  advanceAfterRound(players) {
     this.phase = "round_end";
     this.clearTimers();
     const totalTurns = this.settings.rounds * players.length;
-    const completedTurn =
-      (this.currentRound - 1) * players.length + this.drawerIndex + 1;
+    const completedTurn = (this.currentRound - 1) * players.length + this.drawerIndex + 1;
     if (completedTurn >= totalTurns) {
       this.phase = "game_over";
       return { gameOver: true };
@@ -170,3 +164,5 @@ export class Game {
     return { gameOver: false };
   }
 }
+
+module.exports = { Game };

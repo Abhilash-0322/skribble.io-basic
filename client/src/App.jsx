@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppBackground } from "./components/AppBackground";
-import { GameProvider } from "./GameContext";
-import { Home } from "./pages/Home";
-import { Lobby } from "./pages/Lobby";
-import { Game } from "./pages/Game";
+import { AppBackground } from "./components/AppBackground.jsx";
+import { GameProvider } from "./GameContext.jsx";
+import { Home } from "./pages/Home.jsx";
+import { Lobby } from "./pages/Lobby.jsx";
+import { Game } from "./pages/Game.jsx";
 import "./styles.css";
 
-function App() {
+export default function App() {
   return (
     <GameProvider>
       <div className="app-shell">
@@ -22,5 +22,3 @@ function App() {
     </GameProvider>
   );
 }
-
-export default App;

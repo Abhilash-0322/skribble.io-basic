@@ -1,10 +1,9 @@
-import path from "path";
-import express from "express";
-import { createApp } from "./app.js";
+const path = require("path");
+const express = require("express");
+const { app, httpServer } = require("./app.js");
+
 const PORT = Number(process.env.PORT) || 3001;
 const isVercelService = process.env.VERCEL === "1";
-
-const { app, httpServer } = createApp();
 
 if (!isVercelService) {
   const clientDist = path.join(__dirname, "../../client/dist");
@@ -16,7 +15,7 @@ if (!isVercelService) {
     });
   });
 
-  httpServer.on("error", (err: NodeJS.ErrnoException) => {
+  httpServer.on("error", (err) => {
     if (err.code === "EADDRINUSE") {
       console.error(
         `Port ${PORT} is already in use. Run: npm run predev — or change PORT and VITE_DEV_API_URL in .env to match.`
@@ -31,5 +30,4 @@ if (!isVercelService) {
   });
 }
 
-/** Vercel WebSocket / Node service entry (not Express framework). */
-export default httpServer;
+module.exports = httpServer;

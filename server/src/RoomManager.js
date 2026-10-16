@@ -1,27 +1,28 @@
-import { Room } from "./Room.js";
-import type { RoomSettings } from "./types.js";
+const { Room } = require("./Room.js");
 
-export class RoomManager {
-  private rooms = new Map<string, Room>();
-  private codeToId = new Map<string, string>();
+class RoomManager {
+  constructor() {
+    this.rooms = new Map();
+    this.codeToId = new Map();
+  }
 
-  create(hostName: string, hostSocketId: string, settings?: Partial<RoomSettings>): Room {
+  create(hostName, hostSocketId, settings) {
     const room = new Room(hostName, hostSocketId, settings);
     this.rooms.set(room.id, room);
     this.codeToId.set(room.code, room.id);
     return room;
   }
 
-  get(roomId: string): Room | undefined {
+  get(roomId) {
     return this.rooms.get(roomId);
   }
 
-  getByCode(code: string): Room | undefined {
+  getByCode(code) {
     const id = this.codeToId.get(code.toUpperCase());
     return id ? this.rooms.get(id) : undefined;
   }
 
-  listPublic(): { id: string; code: string; players: number; maxPlayers: number }[] {
+  listPublic() {
     return Array.from(this.rooms.values())
       .filter((r) => !r.settings.isPrivate && r.game.phase === "lobby")
       .map((r) => ({
@@ -32,7 +33,7 @@ export class RoomManager {
       }));
   }
 
-  delete(roomId: string): void {
+  delete(roomId) {
     const room = this.rooms.get(roomId);
     if (room) {
       this.codeToId.delete(room.code);
@@ -40,7 +41,7 @@ export class RoomManager {
     }
   }
 
-  findRoomBySocket(socketId: string): { room: Room; player: import("./Player.js").Player } | null {
+  findRoomBySocket(socketId) {
     for (const room of this.rooms.values()) {
       const player = room.findBySocket(socketId);
       if (player) return { room, player };
@@ -48,3 +49,5 @@ export class RoomManager {
     return null;
   }
 }
+
+module.exports = { RoomManager };

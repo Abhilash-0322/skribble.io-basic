@@ -5,60 +5,24 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
-import { createSocket, emitAck } from "./socket";
-import type { GameStatePayload, LobbyState, PlayerPublic, Stroke } from "./types";
-import type { Socket } from "socket.io-client";
+import { createSocket, emitAck } from "./socket.js";
 
-interface Session {
-  playerId: string;
-  roomId: string;
-  code: string;
-  playerName: string;
-}
+const GameContext = createContext(null);
 
-interface GameContextValue {
-  socket: Socket;
-  connected: boolean;
-  session: Session | null;
-  setSession: (s: Session | null) => void;
-  lobby: LobbyState | null;
-  gameState: GameStatePayload | null;
-  wordOptions: string[] | null;
-  messages: ChatLine[];
-  roundBanner: string | null;
-  gameOver: { winner: PlayerPublic; leaderboard: PlayerPublic[] } | null;
-  setGameOver: (v: { winner: PlayerPublic; leaderboard: PlayerPublic[] } | null) => void;
-  connect: () => void;
-}
-
-export interface ChatLine {
-  playerId: string;
-  playerName: string;
-  text: string;
-  isGuess?: boolean;
-  isCorrect?: boolean;
-}
-
-const GameContext = createContext<GameContextValue | null>(null);
-
-export function GameProvider({ children }: { children: ReactNode }) {
+export function GameProvider({ children }) {
   const socket = useMemo(() => createSocket(), []);
   const [connected, setConnected] = useState(false);
-  const [session, setSession] = useState<Session | null>(() => {
+  const [session, setSession] = useState(() => {
     const raw = sessionStorage.getItem("skribble_session");
     return raw ? JSON.parse(raw) : null;
   });
-  const [lobby, setLobby] = useState<LobbyState | null>(null);
-  const [gameState, setGameState] = useState<GameStatePayload | null>(null);
-  const [wordOptions, setWordOptions] = useState<string[] | null>(null);
-  const [messages, setMessages] = useState<ChatLine[]>([]);
-  const [roundBanner, setRoundBanner] = useState<string | null>(null);
-  const [gameOver, setGameOver] = useState<{
-    winner: PlayerPublic;
-    leaderboard: PlayerPublic[];
-  } | null>(null);
+  const [lobby, setLobby] = useState(null);
+  const [gameState, setGameState] = useState(null);
+  const [wordOptions, setWordOptions] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [roundBanner, setRoundBanner] = useState(null);
+  const [gameOver, setGameOver] = useState(null);
 
   const connect = useCallback(() => {
     if (!socket.connected) socket.connect();
@@ -84,18 +48,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [socket]);
 
   useEffect(() => {
-    socket.on("lobby_state", (data: LobbyState) => setLobby(data));
-    socket.on("player_updated", (data: { players: PlayerPublic[] }) => {
+    socket.on("lobby_state", (data) => setLobby(data));
+    socket.on("player_updated", (data) => {
       setLobby((prev) => (prev ? { ...prev, players: data.players, canStart: prev.canStart } : prev));
     });
-    socket.on("player_joined", (data: { players: PlayerPublic[] }) => {
+    socket.on("player_joined", (data) => {
       setLobby((prev) => (prev ? { ...prev, players: data.players } : prev));
     });
-    socket.on("player_left", (data: { players: PlayerPublic[] }) => {
+    socket.on("player_left", (data) => {
       setLobby((prev) => (prev ? { ...prev, players: data.players } : prev));
     });
-    socket.on("game_state", (data: GameStatePayload) => setGameState(data));
-    socket.on("round_start", (data: { wordOptions: string[] | null; drawerName?: string }) => {
+    socket.on("game_state", (data) => setGameState(data));
+    socket.on("round_start", (data) => {
       setWordOptions(data.wordOptions);
       setRoundBanner(null);
       setMessages([]);
@@ -103,23 +67,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socket.on("round_drawing_start", () => {
       setWordOptions(null);
     });
-    socket.on("timer_tick", (data: { timeLeft: number }) => {
+    socket.on("timer_tick", (data) => {
       setGameState((prev) => (prev ? { ...prev, timeLeft: data.timeLeft } : prev));
     });
-    socket.on("hint_update", (data: { hint: string }) => {
+    socket.on("hint_update", (data) => {
       setGameState((prev) => (prev ? { ...prev, hint: data.hint } : prev));
     });
-    socket.on("round_end", (data: { word: string; gameOver: boolean }) => {
+    socket.on("round_end", (data) => {
       setRoundBanner(`Round over! The word was: ${data.word}`);
       if (!data.gameOver) setWordOptions(null);
     });
-    socket.on("game_over", (data: { winner: PlayerPublic; leaderboard: PlayerPublic[] }) => {
+    socket.on("game_over", (data) => {
       setGameOver(data);
     });
-    socket.on("chat_message", (msg: ChatLine) => {
+    socket.on("chat_message", (msg) => {
       setMessages((m) => [...m, msg]);
     });
-    socket.on("guess_result", (data: ChatLine & { correct: boolean }) => {
+    socket.on("guess_result", (data) => {
       if (data.correct) {
         setMessages((m) => [
           ...m,
@@ -144,7 +108,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return { ...prev, strokes };
       });
     });
-    socket.on("draw_data", (data: { action: string; stroke?: Stroke; strokeId?: string; point?: { x: number; y: number } }) => {
+    socket.on("draw_data", (data) => {
       setGameState((prev) => {
         if (!prev) return prev;
         const strokes = [...prev.strokes];
@@ -180,7 +144,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [socket]);
 
-  const value: GameContextValue = {
+  const value = {
     socket,
     connected,
     session,

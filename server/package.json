@@ -2,8 +2,8 @@
   "name": "server",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc && node -e \"const fs=require('fs');fs.mkdirSync('dist/data',{recursive:true});fs.copyFileSync('src/data/words.json','dist/data/words.json');\"",
+    "dev": "node --watch src/index.js",
+    "build": "node scripts/copy-dist.cjs",
     "build:vercel": "node scripts/build-vercel.cjs",
     "start": "node dist/index.js"
   },
@@ -12,12 +12,5 @@
     "express": "^4.21.2",
     "socket.io": "^4.8.1",
     "uuid": "^11.0.5"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.10.5",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
   }
 }

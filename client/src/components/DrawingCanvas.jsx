@@ -1,16 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
-import type { Stroke } from "../types";
-import type { Socket } from "socket.io-client";
 
 const COLORS = ["#000000", "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#ffffff"];
 
-interface Props {
-  strokes: Stroke[];
-  canDraw: boolean;
-  socket: Socket;
-}
-
-function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, scaleX: number, scaleY: number) {
+function drawStroke(ctx, stroke, scaleX, scaleY) {
   if (stroke.points.length < 1) return;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -33,11 +25,11 @@ function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, scaleX: numbe
   ctx.globalCompositeOperation = "source-over";
 }
 
-export function DrawingCanvas({ strokes, canDraw, socket }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
+export function DrawingCanvas({ strokes, canDraw, socket }) {
+  const canvasRef = useRef(null);
+  const wrapRef = useRef(null);
   const drawingRef = useRef(false);
-  const currentStrokeIdRef = useRef<string | null>(null);
+  const currentStrokeIdRef = useRef(null);
   const colorRef = useRef("#000000");
   const sizeRef = useRef(8);
   const eraserRef = useRef(false);
@@ -69,8 +61,8 @@ export function DrawingCanvas({ strokes, canDraw, socket }: Props) {
     return () => window.removeEventListener("resize", onResize);
   }, [repaint]);
 
-  const toLogical = (e: React.PointerEvent) => {
-    const canvas = canvasRef.current!;
+  const toLogical = (e) => {
+    const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     return {
       x: ((e.clientX - rect.left) / rect.width) * logicalSize.w,
@@ -78,7 +70,7 @@ export function DrawingCanvas({ strokes, canDraw, socket }: Props) {
     };
   };
 
-  const onPointerDown = (e: React.PointerEvent) => {
+  const onPointerDown = (e) => {
     if (!canDraw) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     drawingRef.current = true;
@@ -92,13 +84,13 @@ export function DrawingCanvas({ strokes, canDraw, socket }: Props) {
         size: sizeRef.current,
         isEraser: eraserRef.current,
       },
-      (res: { ok?: boolean; data?: { strokeId: string } }) => {
+      (res) => {
         if (res?.data?.strokeId) currentStrokeIdRef.current = res.data.strokeId;
       }
     );
   };
 
-  const onPointerMove = (e: React.PointerEvent) => {
+  const onPointerMove = (e) => {
     if (!canDraw || !drawingRef.current || !currentStrokeIdRef.current) return;
     const { x, y } = toLogical(e);
     socket.emit("draw_move", { strokeId: currentStrokeIdRef.current, x, y });
@@ -111,7 +103,7 @@ export function DrawingCanvas({ strokes, canDraw, socket }: Props) {
     socket.emit("draw_end", {});
   };
 
-  const setColor = (c: string) => {
+  const setColor = (c) => {
     eraserRef.current = false;
     colorRef.current = c;
   };

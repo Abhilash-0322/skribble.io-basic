@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGame } from "../GameContext";
+import { useGame } from "../GameContext.jsx";
 
 export function Lobby() {
   const navigate = useNavigate();

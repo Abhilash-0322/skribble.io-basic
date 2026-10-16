@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DrawingCanvas } from "../components/DrawingCanvas";
-import { useGame } from "../GameContext";
+import { DrawingCanvas } from "../components/DrawingCanvas.jsx";
+import { useGame } from "../GameContext.jsx";
 
 export function Game() {
   const navigate = useNavigate();
   const { session, gameState, wordOptions, messages, socket, roundBanner, gameOver, connect } =
     useGame();
   const [input, setInput] = useState("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     connect();

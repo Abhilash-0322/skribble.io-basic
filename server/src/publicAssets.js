@@ -1,9 +1,8 @@
-import fs from "fs";
-import path from "path";
-import express, { type Express } from "express";
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
 
-/** Serve Vite build from dist/public (bundled with the serverless function). */
-export function attachPublicAssets(app: Express, dirname: string): void {
+function attachPublicAssets(app, dirname) {
   const publicDir = path.join(dirname, "public");
   if (!fs.existsSync(publicDir)) {
     console.warn("public assets missing at", publicDir);
@@ -27,3 +26,5 @@ export function attachPublicAssets(app: Express, dirname: string): void {
     });
   });
 }
+
+module.exports = { attachPublicAssets };

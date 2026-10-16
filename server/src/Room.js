@@ -1,43 +1,37 @@
-import { randomUUID } from "crypto";
-import { Game } from "./Game.js";
-import { Player } from "./Player.js";
-import type { ChatMessage, RoomSettings, Stroke } from "./types.js";
-import { DEFAULT_SETTINGS } from "./types.js";
+const { randomUUID } = require("crypto");
+const { Game } = require("./Game.js");
+const { Player } = require("./Player.js");
+const { DEFAULT_SETTINGS } = require("./types.js");
 
-function roomCode(): string {
+function roomCode() {
   return randomUUID().slice(0, 6).toUpperCase();
 }
 
-export class Room {
-  id: string;
-  code: string;
-  settings: RoomSettings;
-  players: Map<string, Player> = new Map();
-  game: Game;
-  chatHistory: ChatMessage[] = [];
-
-  constructor(hostName: string, hostSocketId: string, settings?: Partial<RoomSettings>) {
+class Room {
+  constructor(hostName, hostSocketId, settings) {
     this.id = randomUUID();
     this.code = roomCode();
     this.settings = { ...DEFAULT_SETTINGS, ...settings };
+    this.players = new Map();
+    this.chatHistory = [];
     this.game = new Game(this.settings);
     const host = new Player(randomUUID(), hostName, hostSocketId, true);
     this.players.set(host.id, host);
   }
 
-  get playerList(): Player[] {
+  get playerList() {
     return Array.from(this.players.values());
   }
 
-  get host(): Player | undefined {
+  get host() {
     return this.playerList.find((p) => p.isHost);
   }
 
-  findBySocket(socketId: string): Player | undefined {
+  findBySocket(socketId) {
     return this.playerList.find((p) => p.socketId === socketId);
   }
 
-  addPlayer(name: string, socketId: string): Player | null {
+  addPlayer(name, socketId) {
     if (this.players.size >= this.settings.maxPlayers) return null;
     if (this.game.phase !== "lobby") return null;
     const player = new Player(randomUUID(), name, socketId, false);
@@ -45,7 +39,7 @@ export class Room {
     return player;
   }
 
-  removePlayer(playerId: string): Player | null {
+  removePlayer(playerId) {
     const player = this.players.get(playerId);
     if (!player) return null;
     this.players.delete(playerId);
@@ -56,12 +50,12 @@ export class Room {
     return player;
   }
 
-  updateSocket(playerId: string, socketId: string): void {
+  updateSocket(playerId, socketId) {
     const p = this.players.get(playerId);
     if (p) p.socketId = socketId;
   }
 
-  canStart(): boolean {
+  canStart() {
     return (
       this.game.phase === "lobby" &&
       this.players.size >= 2 &&
@@ -69,7 +63,7 @@ export class Room {
     );
   }
 
-  awardGuessPoints(player: Player, rank: number): number {
+  awardGuessPoints(player, rank) {
     const base = Math.max(50, this.game.timeLeft);
     const points = Math.floor(base * (1 - rank * 0.15));
     player.score += Math.max(10, points);
@@ -78,12 +72,12 @@ export class Room {
     return Math.max(10, points);
   }
 
-  pushChat(msg: ChatMessage): void {
+  pushChat(msg) {
     this.chatHistory.push(msg);
     if (this.chatHistory.length > 200) this.chatHistory.shift();
   }
 
-  getGameStateFor(playerId: string) {
+  getGameStateFor(playerId) {
     const drawer = this.game.getDrawer(this.playerList);
     const isDrawer = drawer?.id === playerId;
     const word =
@@ -107,7 +101,7 @@ export class Room {
     };
   }
 
-  getRoundStartPayload(drawerId: string) {
+  getRoundStartPayload(drawerId) {
     const drawer = this.players.get(drawerId);
     return {
       drawerId,
@@ -117,9 +111,11 @@ export class Room {
     };
   }
 
-  getWordOptionsForDrawer(drawerId: string): string[] | null {
+  getWordOptionsForDrawer(drawerId) {
     const drawer = this.game.getDrawer(this.playerList);
     if (!drawer || drawer.id !== drawerId) return null;
     return this.game.wordOptions;
   }
 }
+
+module.exports = { Room };

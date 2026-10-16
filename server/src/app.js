@@ -1,11 +1,11 @@
-import path from "path";
-import express, { type Express } from "express";
-import cors from "cors";
-import { createServer, type Server as HttpServer } from "http";
-import { setupSocketIO } from "./socketSetup.js";
-import { attachPublicAssets } from "./publicAssets.js";
+const path = require("path");
+const express = require("express");
+const cors = require("cors");
+const { createServer } = require("http");
+const { setupSocketIO } = require("./socketSetup.js");
+const { attachPublicAssets } = require("./publicAssets.js");
 
-function clientOrigin(): string | boolean | string[] {
+function clientOrigin() {
   if (process.env.CLIENT_ORIGIN) {
     return process.env.CLIENT_ORIGIN.split(",").map((s) => s.trim());
   }
@@ -13,7 +13,7 @@ function clientOrigin(): string | boolean | string[] {
   return "http://localhost:5173";
 }
 
-export function createApp(assetDir = __dirname): { app: Express; httpServer: HttpServer } {
+function createApp(assetDir = __dirname) {
   const app = express();
   app.use(cors({ origin: clientOrigin() }));
   app.use(express.json());
@@ -45,5 +45,6 @@ export function createApp(assetDir = __dirname): { app: Express; httpServer: Htt
   return { app, httpServer };
 }
 
-const { app } = createApp();
-export default app;
+const bundle = createApp();
+
+module.exports = { createApp, app: bundle.app, httpServer: bundle.httpServer };

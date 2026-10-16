@@ -1,27 +1,20 @@
-import type { Server, Socket } from "socket.io";
-import type { RoomManager } from "./RoomManager.js";
-import type { Room } from "./Room.js";
-import type { RoomSettings, StrokePoint } from "./types.js";
+class MessageHandler {
+  constructor(io, rooms) {
+    this.io = io;
+    this.rooms = rooms;
+  }
 
-type Ack = (response: { ok: boolean; error?: string; data?: unknown }) => void;
-
-export class MessageHandler {
-  constructor(
-    private io: Server,
-    private rooms: RoomManager
-  ) {}
-
-  register(socket: Socket): void {
-    socket.on("create_room", (payload: { hostName: string; settings?: Partial<RoomSettings> }, ack?: Ack) => {
+  register(socket) {
+    socket.on("create_room", (payload, ack) => {
       const name = (payload?.hostName || "Host").trim().slice(0, 20);
       const room = this.rooms.create(name, socket.id, payload?.settings);
-      const host = room.host!;
+      const host = room.host;
       socket.join(room.id);
       this.reply(ack, { ok: true, data: { roomId: room.id, code: room.code, playerId: host.id } });
       this.emitLobby(room);
     });
 
-    socket.on("join_room", (payload: { roomId?: string; code?: string; playerName: string }, ack?: Ack) => {
+    socket.on("join_room", (payload, ack) => {
       const room =
         (payload.roomId && this.rooms.get(payload.roomId)) ||
         (payload.code && this.rooms.getByCode(payload.code));
@@ -42,11 +35,11 @@ export class MessageHandler {
       this.emitLobby(room);
     });
 
-    socket.on("list_public_rooms", (_payload, ack?: Ack) => {
+    socket.on("list_public_rooms", (_payload, ack) => {
       this.reply(ack, { ok: true, data: this.rooms.listPublic() });
     });
 
-    socket.on("set_ready", (payload: { ready: boolean }) => {
+    socket.on("set_ready", (payload) => {
       const ctx = this.getContext(socket);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -64,7 +57,7 @@ export class MessageHandler {
       this.startWordSelectPhase(room);
     });
 
-    socket.on("word_chosen", (payload: { word: string }) => {
+    socket.on("word_chosen", (payload) => {
       const ctx = this.getContext(socket);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -87,28 +80,22 @@ export class MessageHandler {
       );
     });
 
-    socket.on(
-      "draw_start",
-      (
-        payload: { x: number; y: number; color: string; size: number; isEraser?: boolean },
-        ack?: Ack
-      ) => {
-        const ctx = this.getContext(socket);
-        if (!ctx || !this.isDrawer(ctx)) return;
-        const stroke = ctx.room.game.addStroke({
-          points: [{ x: payload.x, y: payload.y }],
-          color: payload.color,
-          size: payload.size,
-          isEraser: payload.isEraser,
-        });
-        const packet = { stroke, action: "add" as const };
-        socket.to(ctx.room.id).emit("draw_data", packet);
-        socket.emit("draw_data", packet);
-        this.reply(ack, { ok: true, data: { strokeId: stroke.id } });
-      }
-    );
+    socket.on("draw_start", (payload, ack) => {
+      const ctx = this.getContext(socket);
+      if (!ctx || !this.isDrawer(ctx)) return;
+      const stroke = ctx.room.game.addStroke({
+        points: [{ x: payload.x, y: payload.y }],
+        color: payload.color,
+        size: payload.size,
+        isEraser: payload.isEraser,
+      });
+      const packet = { stroke, action: "add" };
+      socket.to(ctx.room.id).emit("draw_data", packet);
+      socket.emit("draw_data", packet);
+      this.reply(ack, { ok: true, data: { strokeId: stroke.id } });
+    });
 
-    socket.on("draw_move", (payload: { strokeId: string; x: number; y: number }) => {
+    socket.on("draw_move", (payload) => {
       const ctx = this.getContext(socket);
       if (!ctx || !this.isDrawer(ctx)) return;
       const stroke = ctx.room.game.strokes.find((s) => s.id === payload.strokeId);
@@ -117,15 +104,13 @@ export class MessageHandler {
       const packet = {
         strokeId: payload.strokeId,
         point: { x: payload.x, y: payload.y },
-        action: "move" as const,
+        action: "move",
       };
       socket.to(ctx.room.id).emit("draw_data", packet);
       socket.emit("draw_data", packet);
     });
 
-    socket.on("draw_end", () => {
-      /* stroke already tracked */
-    });
+    socket.on("draw_end", () => {});
 
     socket.on("canvas_clear", () => {
       const ctx = this.getContext(socket);
@@ -141,7 +126,7 @@ export class MessageHandler {
       this.io.to(ctx.room.id).emit("draw_undo", { strokeId: removed?.id });
     });
 
-    socket.on("guess", (payload: { text: string }) => {
+    socket.on("guess", (payload) => {
       const ctx = this.getContext(socket);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -201,7 +186,7 @@ export class MessageHandler {
       }
     });
 
-    socket.on("chat", (payload: { text: string }) => {
+    socket.on("chat", (payload) => {
       const ctx = this.getContext(socket);
       if (!ctx) return;
       const text = (payload.text || "").trim().slice(0, 200);
@@ -239,15 +224,15 @@ export class MessageHandler {
     });
   }
 
-  private getContext(socket: Socket): { room: Room; player: import("./Player.js").Player } | null {
+  getContext(socket) {
     return this.rooms.findRoomBySocket(socket.id);
   }
 
-  private isDrawer(ctx: { room: Room; player: import("./Player.js").Player }): boolean {
+  isDrawer(ctx) {
     return ctx.room.game.getDrawer(ctx.room.playerList)?.id === ctx.player.id;
   }
 
-  private emitLobby(room: Room): void {
+  emitLobby(room) {
     this.io.to(room.id).emit("lobby_state", {
       code: room.code,
       roomId: room.id,
@@ -257,13 +242,13 @@ export class MessageHandler {
     });
   }
 
-  private broadcastGameState(room: Room): void {
+  broadcastGameState(room) {
     for (const p of room.playerList) {
       this.io.to(p.socketId).emit("game_state", room.getGameStateFor(p.id));
     }
   }
 
-  private startWordSelectPhase(room: Room): void {
+  startWordSelectPhase(room) {
     const drawer = room.game.getDrawer(room.playerList);
     if (!drawer) return;
     const base = room.getRoundStartPayload(drawer.id);
@@ -277,7 +262,7 @@ export class MessageHandler {
     this.broadcastGameState(room);
   }
 
-  private endRound(room: Room, reason: string): void {
+  endRound(room, reason) {
     if (room.game.roundEnded) return;
     room.game.roundEnded = true;
     room.game.clearTimers();
@@ -311,7 +296,9 @@ export class MessageHandler {
     }, 5000);
   }
 
-  private reply(ack?: Ack, response?: { ok: boolean; error?: string; data?: unknown }): void {
+  reply(ack, response) {
     if (typeof ack === "function") ack(response ?? { ok: false });
   }
 }
+
+module.exports = { MessageHandler };
